@@ -131,7 +131,10 @@ static void exec_thread(void *data)
 	strncpy(Thread->ret, buffer, SHM_SIZE);
 	/* unlock shared memory */
 	mutex_unlock(Thread->mutex);
-	usleep(Thread->delay);
+	if (Thread->delay > 0)
+	    usleep(Thread->delay);
+	else
+	    break;
     }
 }
 
@@ -210,7 +213,7 @@ static int do_exec(const char *cmd, const char *key, int delay)
     if (age < 0) {
 	hash_put(&EXEC, key, "");
 	/* first-time call: create thread */
-	if (delay < 10) {
+	if (delay < 10 && delay > 1) {
 	    error("exec(%s): delay %d is too short! using 10 msec", cmd, delay);
 	    delay = 10;
 	}
