@@ -128,6 +128,49 @@ static void my_substr(RESULT * result, int argc, RESULT * argv[])
     free(str);
 }
 
+static void my_charat(RESULT * result, RESULT * arg1, RESULT * arg2)
+{
+	char at_result[2];
+	char* org_str = strdup(R2S(arg1));
+	int pos = R2N(arg2);
+
+	at_result[1] = 0;
+
+	if (pos > strlen(org_str) - 1 || pos < 0) {
+		at_result[0] = 0;
+		SetResult(&result, R_STRING, at_result);
+		free(org_str);
+		return;
+	}
+
+	at_result[0] = org_str[pos];
+	SetResult(&result, R_STRING, at_result);
+	free(org_str);
+	return;
+}
+
+static void my_rcharat(RESULT * result, RESULT * arg1, RESULT * arg2)
+{
+	char at_result[2];
+	char* org_str = strdup(R2S(arg1));
+	int len = strlen(org_str);
+	int pos = R2N(arg2);
+
+	at_result[1] = 0;
+
+	if (pos > strlen(org_str) - 1 || pos < 0) {
+		at_result[0] = 0;
+		SetResult(&result, R_STRING, at_result);
+		free(org_str);
+		return;
+	}
+
+	at_result[0] = org_str[len - pos - 1];
+	SetResult(&result, R_STRING, at_result);
+	free(org_str);
+	return;
+}
+
 int plugin_init_string(void)
 {
 
@@ -136,6 +179,8 @@ int plugin_init_string(void)
     AddFunction("strupper", 1, my_strupper);
     AddFunction("strstr", 2, my_strstr);
     AddFunction("substr", -1, my_substr);
+    AddFunction("charat", 2, my_charat);
+    AddFunction("rcharat", 2, my_rcharat);
     return 0;
 }
 
