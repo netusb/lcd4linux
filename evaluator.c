@@ -126,7 +126,9 @@ typedef enum {
     O_CAT,			/* string concatenation */
     O_MUL,			/* multiplication */
     O_DIV,			/* division */
+    O_IDIV,			/* division, keep only integer */
     O_MOD,			/* modulo */
+    O_IMOD,			/* modulo, keep only integer */
     O_POW,			/* power */
     O_NOT,			/* logical NOT */
     O_BRO,			/* open brace */
@@ -179,6 +181,7 @@ static PATTERN Pattern1[] = {
     {".", 1, O_CAT},		/* string concatenation */
     {"*", 1, O_MUL},		/* multiplication */
     {"/", 1, O_DIV},		/* division */
+    {"\\", 1, O_IDIV},		/* division, keep only integer */
     {"%", 1, O_MOD},		/* modulo */
     {"^", 1, O_POW},		/* power */
     {"!", 1, O_NOT},		/* logical NOT */
@@ -188,7 +191,8 @@ static PATTERN Pattern1[] = {
     {"==", 2, O_NEQ},		/* numeric equal */
     {"!=", 2, O_NNE},		/* numeric not equal */
     {"<=", 2, O_NLE},		/* numeric less or equal */
-    {">=", 2, O_NGE}		/* numeric greater or equal */
+    {">=", 2, O_NGE},		/* numeric greater or equal */
+    {"%%%%", 2, O_IMOD}		/* modulo, keep only integer */
 };
 
 /* alphanumeric operators */
@@ -931,7 +935,9 @@ static NODE *Level09(void)
 
     Root = Level10();
 
-    while (Token == T_OPERATOR && (Operator == O_MUL || Operator == O_DIV || Operator == O_MOD)) {
+    while (Token == T_OPERATOR && (Operator == O_MUL ||
+				    Operator == O_DIV || Operator == O_IDIV ||
+				    Operator == O_MOD || Operator == O_IMOD)) {
 	Root = NewNode(Root);
 	Parse();
 	LinkNode(Root, Level10());
@@ -1327,6 +1333,19 @@ static int EvalTree(NODE * Root)
 	    }
 	    break;
 
+	case O_IDIV:		/* division, keep only integer */
+	    type = R_NUMBER;
+	    EvalTree(Root->Child[0]);
+	    EvalTree(Root->Child[1]);
+	    dummy = R2N(Root->Child[1]->Result);
+	    if (dummy == 0) {
+		error("Evaluator: warning: division by zero");
+		number = 0.0;
+	    } else {
+		number = (long)R2N(Root->Child[0]->Result) / (long)R2N(Root->Child[1]->Result);
+	    }
+	    break;
+
 	case O_MOD:		/* modulo */
 	    type = R_NUMBER;
 	    EvalTree(Root->Child[0]);
@@ -1337,6 +1356,19 @@ static int EvalTree(NODE * Root)
 		number = 0.0;
 	    } else {
 		number = fmod(R2N(Root->Child[0]->Result), R2N(Root->Child[1]->Result));
+	    }
+	    break;
+
+	case O_IMOD:		/* modulo, keep only integer */
+	    type = R_NUMBER;
+	    EvalTree(Root->Child[0]);
+	    EvalTree(Root->Child[1]);
+	    dummy = R2N(Root->Child[1]->Result);
+	    if (dummy == 0) {
+		error("Evaluator: warning: division by zero");
+		number = 0.0;
+	    } else {
+		number = (long)R2N(Root->Child[0]->Result) % (long)R2N(Root->Child[1]->Result);
 	    }
 	    break;
 
